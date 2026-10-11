@@ -48,10 +48,10 @@ static void directories_creator(const char *absolute_path) {
     }
 
 #else
-    for (ptr = temporary_buffer + 1; *ptr; ptr++) {
+    for (ptr = temporary_buf + 1; *ptr; ptr++) {
         if (*ptr == '/') {
             *ptr = 0;
-            mkdir(temporary_buffer, 0755);
+            mkdir(temporary_buf, 0755);
             *ptr = '/';
         }
     }
@@ -218,7 +218,8 @@ void save_password(sqlite3 *db, Password *psw, uint8_t *master_key, uint8_t *ses
 
         // Encrypt the password before save
         xor_master_key(master_key, session_key);
-        aes256_crypt(psw->ciphertext, psw->ciphertext_length, psw->ciphertext, &psw->ciphertext_length)
+        aes256_crypt(psw->ciphertext, &psw->ciphertext_length, psw->ciphertext, psw->ciphertext_length, psw->nonce, master_key);
+        xor_master_key(master_key, session_key);
 
         if (sqlite3_prepare_v2(db, "INSERT INTO passwords (User_Name, Service, Ciphertext, Ciphertext_Length, Nonce) VALUES (?, ?, ?, ?, ?)", -1, &stmt, NULL) == SQLITE_OK) {
             sqlite3_bind_text(stmt, 1, (const char*)psw->user_name, -1, SQLITE_TRANSIENT);
@@ -239,5 +240,15 @@ void save_password(sqlite3 *db, Password *psw, uint8_t *master_key, uint8_t *ses
     }
     else {
         printf("Error in checking nonces: %s\n", sqlite3_errmsg(db));
+    }
+}
+
+void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
+    sqlite3_stmt *stmt;
+    if (sqlite3_prepare_v2(db, "SELECT * FROM passwords", -1, stmt, NULL) == SQLITE_OK) {
+        
+    }
+    else {
+        printf("Failed while selecting %s\n", sqlite3_errmsg(db));
     }
 }

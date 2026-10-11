@@ -9,6 +9,7 @@
 #include <string.h>
 
 void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key);
+void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key);
 
 int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
     uint8_t *menu_message = 
@@ -24,10 +25,10 @@ int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
         scanf(" %d", &answer);
 
         if (answer == 1) {
-            // create_password(*db, master_key, session_key);
+            create_password(*db, master_key, session_key);
         }
         else if (answer == 2) {
-            // display_passwords(*db, master_key, session_key);
+            display_passwords(*db, master_key, session_key);
         }
         else if (answer == 3) {
             // delete_user(*db, master_key, session_key);
