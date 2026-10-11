@@ -1,10 +1,4 @@
-# SQLite files (your case)
-sqlite3.c
-sqlite3.h
-sqlite3.dll
-sqlite3.lib
-
-# Or if they're in a subfolder:
+# SQLite (in subfolder)
 sqlite/
 
 # Build output
