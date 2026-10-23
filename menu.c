@@ -102,7 +102,13 @@ void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
         else {
             Password psw = {0};
             fulfil_rand_psw(psw.ciphertext, type, length);
-            
+            for (uint8_t i = 0; i < 5; i++) {
+                printf("Will clear in: %d", i);
+                sleep(1);
+                printf("\r");
+            }
+            printf("\033[3J\033[H\033[2J");
+            fflush(stdout);
         }
     }
 }
