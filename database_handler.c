@@ -244,11 +244,43 @@ void save_password(sqlite3 *db, Password *psw, uint8_t *master_key, uint8_t *ses
 }
 
 void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
-    sqlite3_stmt *stmt;
-    if (sqlite3_prepare_v2(db, "SELECT * FROM passwords", -1, stmt, NULL) == SQLITE_OK) {
-        
+    sqlite3_stmt *stmt = NULL;
+    if (sqlite3_prepare_v2(db, "SELECT User_Name FROM passwords", -1, &stmt, NULL) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            const uint8_t *user_name = sqlite3_column_text(stmt, 0);
+            printf("User: %s\n", user_name);
+            sqlite3_stmt *details_stmt = NULL;
+            if (sqlite3_prepare16_v2(db, "SELECT Service, Ciphertext, Ciphertext_Length, Nonce FROM passwords WHERE User_Name = ?", -1, &details_stmt, NULL) == SQLITE_OK) {
+                sqlite3_bind_text(details_stmt, 1, (const char *)user_name, -1, SQLITE_TRANSIENT);
+                while (sqlite3_step(details_stmt) == SQLITE_ROW) {
+                    const uint8_t *service = sqlite3_column_text(details_stmt, 0);
+                    uint8_t *ciphertext = sqlite3_column_blob(details_stmt, 1);
+                    size_t length = (size_t) sqlite3_column_int(details_stmt, 2);
+                    const uint8_t *nonce = sqlite3_column_blob(details_stmt, 3);
+
+                    xor_master_key(master_key, session_key);
+                    aes256_decrypt(ciphertext, &length, ciphertext, length, nonce, master_key);
+                    xor_master_key(master_key, session_key);
+
+                    printf("- %s: %s\n", service, ciphertext);
+                    sodium_memzero(ciphertext, length);
+                }
+                sqlite3_finalize(details_stmt);
+            }
+            else {
+                printf("Failed to fetch data:  %s\n", sqlite3_errmsg(db));
+            }
+        }
+        sqlite3_finalize(stmt);
+        for (uint8_t i = 0; i < 5; i++) {
+            printf("Will clear in: %d", i);
+            sleep(1);
+            printf("\r");
+        }
+        printf("\033[3J\033[H\033[2J");
+        fflush(stdout);
     }
     else {
-        printf("Failed while selecting %s\n", sqlite3_errmsg(db));
+        printf("Failed to fetch data:  %s\n", sqlite3_errmsg(db));
     }
 }
