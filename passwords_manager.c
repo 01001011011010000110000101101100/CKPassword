@@ -15,9 +15,6 @@
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
     #include <direct.h>
-    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD mode; GetConsoleMode(h, &mode);
-    SetConsoleMode(h, mode | 0x0004);
 #else
     #include <termios.h>
     #include <unistd.h>
@@ -64,6 +61,13 @@ int handle_check_status(int status) {
 }
 
 int main(void) {
+
+#if defined(_WIN32) || defined(_WIN64)
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode; GetConsoleMode(h, &mode);
+    SetConsoleMode(h, mode | 0x0004);
+#endif
+
     sqlite3 *db;
     int db_status = init_database(&db);
     if (sodium_init() < 0 || db_status < 0) {
@@ -83,12 +87,12 @@ int main(void) {
     uint8_t session_key[crypto_aead_aes256gcm_KEYBYTES];
     randombytes_buf(session_key, sizeof(session_key));
 
-    printf("\tHello in M.PASS\nPlease Enter The password it should be more than 16 character and less than or equal to 128 character and contain at less 2 symbols and 4 Uppercase character\n(It will be hidden):\n=> ");
+    printf("\tHello in M.PASS\nPlease Enter The password it should be more than 16 character and less than or equal to 127 character and contain at less 2 symbols and 4 Uppercase character\n(It will be hidden):\n=> ");
     if (db_status != 0)
         set_echo(false);
 
     fflush(stdout);
-    while (read_line(password, (MAX_LEN_PSW * sizeof(char) + 1))) {
+    while (read_line(password, (MAX_LEN_PSW * sizeof(char)))) {
         password[strcspn(password, "\n")] = 0;
         if (db_status == 0) {
             if (strlen(password) < 16) {
