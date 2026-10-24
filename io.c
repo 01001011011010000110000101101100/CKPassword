@@ -42,6 +42,7 @@ int read_d(int *out){
     errno = 0;
     long v = strtol(line, &end, 10);
     if (end == line || *end != '\0' || errno || v < INT_MIN || v > INT_MAX)
+        *out = '\0';
         return 0;
     *out = (int)v;
     return 1;
