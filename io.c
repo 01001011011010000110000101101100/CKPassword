@@ -34,8 +34,7 @@ bool read_c(char *out) {
     return true;
 }
 
-
-bool read_d(int *out){
+int read_d(int *out){
     char line[16];
     if (!read_line(line, sizeof line)) return -1;
 
