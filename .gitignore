@@ -5,6 +5,7 @@ sqlite/
 build/
 *.o
 *.exe
+CKPassword
 
 # OS / IDE files
 .DS_Store

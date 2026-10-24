@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O3 -D_POSIX_C_SOURCE=200112L
+CFLAGS = -Wall -Wextra -O0 -D_POSIX_C_SOURCE=200112L -Isqlite
 LIBS = -lsodium -lrt -lm
 
-TARGET = password_manager
-SRCS = password_manager.c encryption.c database_handler.c menu.c sqlite3.c
+TARGET = CKPassword
+SRCS = passwords_manager.c encryption.c database_handler.c menu.c sqlite/sqlite3.c
 
 all: $(TARGET)
 

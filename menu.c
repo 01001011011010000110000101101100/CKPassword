@@ -8,11 +8,16 @@
 #include <stdio.h>
 #include <string.h>
 
-void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key);
-void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key);
+#if defined(_WIN32) || defined(_WIN64)
+    #include <windows.h>
+#else
+    #include <unistd.h>
+#endif
+
+static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key);
 
 int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
-    uint8_t *menu_message = 
+    char *menu_message = 
     "\t----Main Menu----\n"
     "1. Create a new password\n"
     "2. View saved passwords\n"
@@ -22,7 +27,10 @@ int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
     int answer;
     while (true) {
         printf("%s", menu_message);
-        scanf(" %d", &answer);
+        if (scanf(" %d", &answer) != 1) {
+            while(getchar() != '\n'); // Clear buffer
+            continue;
+        }
 
         if (answer == 1) {
             create_password(*db, master_key, session_key);
@@ -42,15 +50,16 @@ int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
     }
 }
 
-void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
-    uint8_t *name, *service;
-    uint8_t length;
+static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
+    char name[256];
+    char service[256];
+    psw_len length;
 
-    printf("Creating new password...\n"
-            "Enter user name\n=> "
+    while(getchar() != '\n');
+    printf("Creating new password...\nEnter user name\n=> "
     );
 
-    while (fgets((char*) name, 0xFF, stdin) != NULL) {
+    while (fgets(name, 0xFF, stdin) != NULL) {
         name[strcspn(name, "\n")] = 0;
         if (strlen(name) <= 2) {
             printf("The name must be at less 2 of characters\n");
@@ -62,7 +71,7 @@ void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
 
     printf("Name: %s\n  Service: ", name);
 
-    while (fgets((char*) service, 0xFF, stdin) != NULL) {
+    while (fgets(service, 0xFF, stdin) != NULL) {
         service[strcspn(service, "\n")] = 0;
         if (strlen(service) <= 2) {
             printf("The service's name must be at less 2 of characters\n");
@@ -72,16 +81,16 @@ void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
         break;
     }
     printf("Name: %s\n  Service: %s\nPassword Length: (at lest 10 at more 255)\n=> ", name, service);
-    while (scanf(" %d", &length) == 1) {
-        if (length < 10) {
-            printf("The length could not be less than 10\n");
+    while (scanf(" %llu", &length) == 1) {
+        if (length < 10 || length > 255) {
+            printf("The length could not be less than 10 or more than 255\n");
             printf("Password Length: (at lest 10 at more 255)\n=> ");
             continue;
         }
         break;
     }
 
-    uint8_t *password_type_message =
+    char *password_type_message =
     "\tChose the password type\n"
     "'p' = with punctuation and other matters (e.g., M9$vp)\n"
     "'n' = with numbers and other matters unless punctuation (e.g., Lo89N)\n"
@@ -90,9 +99,9 @@ void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
     "'e' = return to the main menu\n"
     "=> ";
     printf("%s", password_type_message);
-    uint8_t type;
+    char type;
     while (scanf(" %c", &type) == 1) {
-        if (type != 'p' || type != 'n' || type != 'c' || type != 's' || type != 'e') {
+        if (type != 'p' && type != 'n' && type != 'c' && type != 's' && type != 'e') {
             printf("=============\nUnvalid chose\n============\n%s", password_type_message);
             continue;
         }
@@ -101,14 +110,21 @@ void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
         }
         else {
             Password psw = {0};
-            fulfil_rand_psw(psw.ciphertext, type, length);
-            for (uint8_t i = 0; i < 5; i++) {
-                printf("Will clear in: %d", i);
+            strncpy((char*)psw.user_name, name, sizeof(psw.user_name) - 1);
+            strncpy((char*)psw.service_provider, service, sizeof(psw.service_provider) - 1);
+            fulfil_rand_psw(psw.ciphertext, (uint8_t)type, length);
+            psw.ciphertext_length = length;
+
+            save_password(db, &psw, master_key, session_key);
+            for (uint8_t i = 5; i; i--) {
+                printf("Will clear in: %u", i);
+                fflush(stdout);
                 sleep(1);
                 printf("\r");
             }
-            printf("\033[3J\033[H\033[2J");
             fflush(stdout);
+            printf("\033[3J\033[H\033[2J");
+            return;
         }
     }
 }
