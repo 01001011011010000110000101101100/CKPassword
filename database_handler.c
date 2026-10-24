@@ -200,61 +200,54 @@ int check_verifier(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
 
     printf("====================\nVerified Successfully\n====================\n");    
     result = 0;
-    goto cleanup;
 
-    cleanup:
-        sqlite3_finalize(stmt);
-        return result;
+cleanup:
+    sqlite3_finalize(stmt);
+    return result;
 }
 
 void save_password(sqlite3 *db, Password *psw, uint8_t *master_key, uint8_t *session_key) {
-    printf("Save Function Called\n");
+    sqlite3_stmt *select_stmt = NULL; sqlite3_stmt *insert_stmt= NULL;
 
-    sqlite3_stmt *select_stmt;
-    if (sqlite3_prepare_v2(db, "SELECT nonce FROM passwords ORDER BY nonce DESC LIMIT 1", -1, &select_stmt, NULL) == SQLITE_OK) {
-        if (sqlite3_step(select_stmt) == SQLITE_ROW) {
-            memcpy(psw->nonce, sqlite3_column_blob(select_stmt, 0), crypto_aead_aes256gcm_NPUBBYTES);
-            sodium_increment(psw->nonce, crypto_aead_aes256gcm_NPUBBYTES);
-        }
-        else {
-            memset(psw->nonce, 0, crypto_aead_aes256gcm_NPUBBYTES);
-            sodium_increment(psw->nonce, crypto_aead_aes256gcm_NPUBBYTES);
-        }
-
-        // Encrypt the password before save
-        xor_master_key(master_key, session_key);
-        aes256_crypt(psw->ciphertext, &psw->ciphertext_length, psw->ciphertext, psw->ciphertext_length, psw->nonce, master_key);
-        for (int i =0; i<12; i++){
-            printf("%X ", psw->nonce[i]);
-        }
-        printf("\n\n");
-
-        xor_master_key(master_key, session_key);
-
-        printf("\n\n");
-
-        sqlite3_stmt *insert_stmt;
-        if (sqlite3_prepare_v2(db, "INSERT INTO passwords (User_Name, Service, Ciphertext, Ciphertext_Length, Nonce) VALUES (?, ?, ?, ?, ?)", -1, &insert_stmt, NULL) == SQLITE_OK) {
-            sqlite3_bind_text(insert_stmt, 1, (const char*)psw->user_name, (sizeof(char) * strlen((const char*)psw->user_name)), SQLITE_TRANSIENT);
-            sqlite3_bind_text(insert_stmt, 2, (const char*)psw->service_provider, (sizeof(char) * strlen((const char*)psw->service_provider)), SQLITE_TRANSIENT);
-            sqlite3_bind_blob(insert_stmt, 3, psw->ciphertext, (sizeof(char) * psw->ciphertext_length), SQLITE_TRANSIENT);
-            sqlite3_bind_int(insert_stmt, 4, psw->ciphertext_length);
-            sqlite3_bind_blob(insert_stmt, 5, psw->nonce, crypto_aead_aes256gcm_NPUBBYTES, SQLITE_TRANSIENT);
-
-            if (sqlite3_step(insert_stmt) == SQLITE_DONE) 
-                printf("Saved Successfully\n");
-            else 
-                printf("Failed to commit data: %s\n", sqlite3_errmsg(db));
-        }
-        else {
-            printf("Failed to insert data:  %s\n", sqlite3_errmsg(db));
-        }
-        sqlite3_finalize(insert_stmt);
+    if (sqlite3_prepare_v2(db, "SELECT nonce FROM passwords ORDER BY nonce DESC LIMIT 1", -1, &select_stmt, NULL) != SQLITE_OK) {
+        printf("Error in checking nonces: %s\n", sqlite3_errmsg(db));
+        goto cleanup;
+    }
+    else if (sqlite3_step(select_stmt) != SQLITE_ROW) {
+        memset(psw->nonce, 0, crypto_aead_aes256gcm_NPUBBYTES);
+        sodium_increment(psw->nonce, crypto_aead_aes256gcm_NPUBBYTES);
     }
     else {
-        printf("Error in checking nonces: %s\n", sqlite3_errmsg(db));
+        memcpy(psw->nonce, sqlite3_column_blob(select_stmt, 0), crypto_aead_aes256gcm_NPUBBYTES);
+        sodium_increment(psw->nonce, crypto_aead_aes256gcm_NPUBBYTES);
     }
+    // Encrypt the password before save
+    xor_master_key(master_key, session_key);
+    aes256_crypt(psw->ciphertext, &psw->ciphertext_length, psw->ciphertext, psw->ciphertext_length, psw->nonce, master_key);
+    xor_master_key(master_key, session_key);
+    
+    if (sqlite3_prepare_v2(db, "INSERT INTO passwords (User_Name, Service, Ciphertext, Ciphertext_Length, Nonce) VALUES (?, ?, ?, ?, ?)", -1, &insert_stmt, NULL) != SQLITE_OK) {
+        printf("Failed to insert data:  %s\n", sqlite3_errmsg(db));
+        goto cleanup;
+    }
+
+    sqlite3_bind_text(insert_stmt, 1, (const char*)psw->user_name, (sizeof(char) * strlen((const char*)psw->user_name)), SQLITE_TRANSIENT);
+    sqlite3_bind_text(insert_stmt, 2, (const char*)psw->service_provider, (sizeof(char) * strlen((const char*)psw->service_provider)), SQLITE_TRANSIENT);
+    sqlite3_bind_blob(insert_stmt, 3, psw->ciphertext, (sizeof(char) * psw->ciphertext_length), SQLITE_TRANSIENT);
+    sqlite3_bind_int(insert_stmt, 4, psw->ciphertext_length);
+    sqlite3_bind_blob(insert_stmt, 5, psw->nonce, crypto_aead_aes256gcm_NPUBBYTES, SQLITE_TRANSIENT);
+
+    if (sqlite3_step(insert_stmt) != SQLITE_DONE) {
+        printf("Failed to commit data: %s\n", sqlite3_errmsg(db));
+        goto cleanup;
+    }
+
+    printf("Saved Successfully\n");
+
+cleanup:
     sqlite3_finalize(select_stmt);
+    sqlite3_finalize(insert_stmt);
+    return;
 }
 
 void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
