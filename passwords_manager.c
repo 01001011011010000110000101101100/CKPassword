@@ -127,8 +127,16 @@ int main(void) {
             sodium_memzero(master_key, sizeof master_key);
             sqlite3_finalize(stmt);
             sqlite3_close(db);
-            abort();
+            return -1;
         }
+    }
+    if (salt == NULL) {
+        printf("The salt not found\n");
+        sodium_free(password);
+        sodium_memzero(master_key, sizeof master_key);
+        sqlite3_finalize(stmt);
+        sqlite3_close(db);
+        return -1;
     }
 
     // Encrypt master password

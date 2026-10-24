@@ -66,6 +66,7 @@ static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_k
             printf("Enter user name\n=> ");
             continue;
         }
+        while(getchar() != '\n');
         break;
     }
 
@@ -101,6 +102,7 @@ static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_k
     printf("%s", password_type_message);
     char type;
     while (scanf(" %c", &type) == 1) {
+        while(getchar() != '\n');
         if (type != 'p' && type != 'n' && type != 'c' && type != 's' && type != 'e') {
             printf("=============\nUnvalid chose\n============\n%s", password_type_message);
             continue;

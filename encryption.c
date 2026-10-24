@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #include "stracture.h"
 
