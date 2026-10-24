@@ -44,7 +44,7 @@ int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
         }
         else if (answer == 4) {
             // insert_password(*db, master_key, session_key)
-            printf("This featur is under development\n")
+            printf("This featur is under development\n");
         }
         else if (answer == 5) {
             return 0;
