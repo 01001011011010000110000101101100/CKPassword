@@ -1,6 +1,7 @@
 #include "database_handler.h"
 #include "encryption.h"
 #include "menu.h"
+#include "io.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,9 @@
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
     #include <direct.h>
+    HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD mode; GetConsoleMode(h, &mode);
+    SetConsoleMode(h, mode | 0x0004);
 #else
     #include <termios.h>
     #include <unistd.h>
@@ -84,7 +88,7 @@ int main(void) {
         set_echo(false);
 
     fflush(stdout);
-    while (fgets(password, MAX_LEN_PSW, stdin) != NULL) {
+    while (read_line(password, (MAX_LEN_PSW * sizeof(char) + 1))) {
         password[strcspn(password, "\n")] = 0;
         if (db_status == 0) {
             if (strlen(password) < 16) {

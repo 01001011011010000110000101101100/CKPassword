@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 #include "stracture.h"
+#include "io.h"
 
 bool drive_master_key(uint8_t master_key[crypto_aead_aes256gcm_KEYBYTES], const char *password, const uint8_t salt[crypto_pwhash_SALTBYTES])
 {
@@ -85,8 +86,8 @@ void fulfil_rand_psw(uint8_t *psw, char type, size_t psw_length) {
 
         printf("Password: %s\n", psw);
         printf("Save it? (Y/n)\n=> ");
-        uint8_t answer;
-        while (scanf(" %c", &answer) == 1) {
+        char answer;
+        while (read_c(&answer)) {
             answer = toupper(answer);
             if (answer == 'Y') {
                 return;

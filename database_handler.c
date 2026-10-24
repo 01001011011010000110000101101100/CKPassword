@@ -86,7 +86,7 @@ int init_database(sqlite3 **db) {
     const char *sql_create = 
         "CREATE TABLE IF NOT EXISTS passwords ("
         "    User_Name VARCHAR(255) NOT NULL,"
-        "    Service VARCHAR(255) NOT NULL PRIMARY KEY,"
+        "    Service VARCHAR(255) NOT NULL,"
         "    Ciphertext BLOB NOT NULL,"
         "    Nonce BLOB NOT NULL UNIQUE,"
         "    UNIQUE(User_Name, Service)"
@@ -304,7 +304,7 @@ void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
             printf("\r");
         }
         fflush(stdout);
-        printf("\033[3J\033[H\033[2J");
+        printf("\033[H\033[2J\033[3J");
     }
 
 cleanup:

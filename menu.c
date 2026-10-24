@@ -2,6 +2,7 @@
 #include "encryption.h"
 #include "database_handler.h"
 #include "stracture.h"
+#include "io.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -22,15 +23,14 @@ int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
     "1. Create a new password\n"
     "2. View saved passwords\n"
     "3. Delete a user\n"
-    "4. Exit\n"
+    "4. Insert Password\n"
+    "5. Exit\n"
     "=> ";
     int answer;
+
     while (true) {
         printf("%s", menu_message);
-        if (scanf(" %d", &answer) != 1) {
-            while(getchar() != '\n'); // Clear buffer
-            continue;
-        }
+        if (read_d(&answer) < 0) {return 1;}
 
         if (answer == 1) {
             create_password(*db, master_key, session_key);
@@ -40,12 +40,17 @@ int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
         }
         else if (answer == 3) {
             // delete_user(*db, master_key, session_key);
+            continue;
         }
         else if (answer == 4) {
+            // insert_password(*db, master_key, session_key)
+            continue;
+        }
+        else if (answer == 5) {
             return 0;
         }
         else {
-            printf("Invalid choice, please enter 1, 2, 3, or 4.\n");
+            printf("Invalid choice: %d, please enter 1, 2, 3, 4 or 5.\n", answer);
         }
     }
 }
@@ -53,27 +58,23 @@ int menu(sqlite3 **db, uint8_t *master_key, uint8_t *session_key) {
 static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
     char name[256];
     char service[256];
-    psw_len length;
+    psw_len length = 0;
 
-    while(getchar() != '\n');
     printf("Creating new password...\nEnter user name\n=> "
     );
 
-    while (fgets(name, 0xFF, stdin) != NULL) {
-        name[strcspn(name, "\n")] = 0;
+    while (read_line(name, (sizeof(char) * 256))) {
         if (strlen(name) <= 2) {
             printf("The name must be at less 2 of characters\n");
             printf("Enter user name\n=> ");
             continue;
         }
-        while(getchar() != '\n');
         break;
     }
 
     printf("Name: %s\n  Service: ", name);
 
-    while (fgets(service, 0xFF, stdin) != NULL) {
-        service[strcspn(service, "\n")] = 0;
+    while (read_line(service, (sizeof(char) * 256))) {
         if (strlen(service) <= 2) {
             printf("The service's name must be at less 2 of characters\n");
             printf("Enter user service's name\n=> ");
@@ -82,7 +83,7 @@ static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_k
         break;
     }
     printf("Name: %s\n  Service: %s\nPassword Length: (at lest 10 at more 255)\n=> ", name, service);
-    while (scanf(" %llu", &length) == 1) {
+    while (read_ull(&length)) {
         if (length < 10 || length > 255) {
             printf("The length could not be less than 10 or more than 255\n");
             printf("Password Length: (at lest 10 at more 255)\n=> ");
@@ -101,8 +102,7 @@ static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_k
     "=> ";
     printf("%s", password_type_message);
     char type;
-    while (scanf(" %c", &type) == 1) {
-        while(getchar() != '\n');
+    while (read_c(&type)) {
         if (type != 'p' && type != 'n' && type != 'c' && type != 's' && type != 'e') {
             printf("=============\nUnvalid chose\n============\n%s", password_type_message);
             continue;
@@ -125,7 +125,7 @@ static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_k
                 printf("\r");
             }
             fflush(stdout);
-            printf("\033[3J\033[H\033[2J");
+            printf("\033[H\033[2J\033[3J");
             return;
         }
     }
