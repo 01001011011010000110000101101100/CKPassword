@@ -95,10 +95,8 @@ void fulfil_rand_psw(uint8_t *psw, char type, size_t psw_length) {
             else if (answer == 'N') {
                 goto create_password;
             }
-            else {
-                printf("Unvalid choice\n");
-                continue;
-            }
+            printf("Unvalid choice\n");
+            continue;   
         }
     }
 }    

@@ -27,13 +27,13 @@ bool read_ull(psw_len *out) {
 }
 
 bool read_c(char *out) {
-    if (scanf(" %c", out) == 1){
-        int c;
-        while((c = getchar()) != '\n' && c != EOF);
-        return true;
-    }
-    return false;
+    char line[8];
+    if (!read_line(line, sizeof line)) return false;
+    if (line[0] == '\0' || line[1] != '\0') { *out = '\0'; return true; }
+    *out = line[0];
+    return true;
 }
+
 
 bool read_d(int *out){
     char line[16];
