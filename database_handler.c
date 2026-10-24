@@ -294,7 +294,7 @@ void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
     }
 
     if (!exc){
-        printf("==========\n\tNot Data to Displat\n========\n");
+        printf("==========\n\tNot Data to Display\n========\n");
     }
     else {
         for (uint8_t i = 5; i; i--) {
