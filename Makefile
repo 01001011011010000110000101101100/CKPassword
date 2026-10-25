@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -O0 -D_POSIX_C_SOURCE=200112L -Isqlite
+CFLAGS = -Wall -Wextra -O0 -Isqlite
 LIBS = -lsodium -lrt -lm
 
 TARGET = CKPassword
