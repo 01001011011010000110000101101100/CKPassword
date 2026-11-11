@@ -74,7 +74,7 @@ int main(void) {
         fprintf(stderr, "Failed to configuring the program\n");
         return 1;
     }
-    if (crypto_aead_aes256gcm_is_available() == 0) {
+    if (crypto_aead_aes256gcm_is_available() != 0) {
         printf("AES-256-GCM does not support on this device\n");
         sqlite3_close(db);
         exit(1);
@@ -87,7 +87,7 @@ int main(void) {
     uint8_t session_key[crypto_aead_aes256gcm_KEYBYTES];
     randombytes_buf(session_key, sizeof(session_key));
 
-    printf("\tHello in M.PASS\nPlease Enter The password it should be more than 16 character and less than or equal to 127 character and contain at less 2 symbols and 4 Uppercase character\n(It will be hidden):\n=> ");
+    printf("\tHello in CKPassword\nPlease Enter The password it should be more than 16 character and less than or equal to 127 character and contain at less 2 symbols and 4 Uppercase character\n(It will be hidden):\n=> ");
     if (db_status != 0)
         set_echo(false);
 
@@ -170,5 +170,9 @@ int main(void) {
     // CLear the memory at the ending
     sodium_memzero(master_key, sizeof master_key);
     sqlite3_close(db);
+
+    fflush(stdout);
+    printf("\033[H\033[2J\033[3J");
+    
     return 0;
 }

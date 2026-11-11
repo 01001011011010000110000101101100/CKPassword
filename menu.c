@@ -8,11 +8,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <unistd.h>
 #if defined(_WIN32) || defined(_WIN64)
-    #include <windows.h>
-#else
-    #include <unistd.h>
+    #include <windows.h>    
 #endif
 
 static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_key);
@@ -121,7 +119,11 @@ static void create_password(sqlite3 *db, uint8_t *master_key, uint8_t *session_k
             for (uint8_t i = 5; i; i--) {
                 printf("Will clear in: %u", i);
                 fflush(stdout);
+            # if defined(_WIN32) || defined(_WIN64)
+                Sleep(1000);
+            #else
                 sleep(1);
+            #endif
                 printf("\r");
             }
             fflush(stdout);

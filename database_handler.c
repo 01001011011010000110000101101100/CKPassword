@@ -76,7 +76,7 @@ static void get_absolute_path(char absolute_path_buf[1024], const size_t arr_siz
 int init_database(sqlite3 **db) {
     char absolute_path[1024];
     get_absolute_path(absolute_path, sizeof(absolute_path), DATABASE_PATH);
-    int response = sqlite3_open(absolute_path, db);
+    int response = sqlite3_open(absolute_path, db);            
     
     if (response != SQLITE_OK) {
         printf("Connection to database failed %s\n", sqlite3_errmsg(*db));
@@ -300,7 +300,11 @@ void display_passwords(sqlite3 *db, uint8_t *master_key, uint8_t *session_key) {
         for (uint8_t i = 5; i; i--) {
             printf("Will clear in: %d", i);
             fflush(stdout);
+        # if defined(_WIN32) || defined(_WIN64)
+            Sleep(1);
+        #else
             sleep(1);
+        #endif
             printf("\r");
         }
         fflush(stdout);
